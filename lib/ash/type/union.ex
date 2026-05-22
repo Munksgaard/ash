@@ -766,7 +766,11 @@ defmodule Ash.Type.Union do
 
         config_constraints =
           if Ash.Type.embedded_type?(config[:type]) do
-            Keyword.put(config[:constraints] || [], :__union_tag__, config[:tag])
+            (config[:constraints] || [])
+            |> Keyword.put(:__union_tag__, config[:tag])
+            |> Keyword.put_new_lazy(:include_source?, fn ->
+              Keyword.get(constraints, :include_source?, @include_source_by_default)
+            end)
           else
             config[:constraints] || []
           end
@@ -1134,6 +1138,15 @@ defmodule Ash.Type.Union do
           type_constraints =
             if union_tag = constraints[:types][name][:tag] do
               Keyword.put(type_constraints, :__union_tag__, union_tag)
+            else
+              type_constraints
+            end
+
+          type_constraints =
+            if Ash.Type.embedded_type?(type) do
+              Keyword.put_new_lazy(type_constraints, :include_source?, fn ->
+                Keyword.get(constraints, :include_source?, @include_source_by_default)
+              end)
             else
               type_constraints
             end
